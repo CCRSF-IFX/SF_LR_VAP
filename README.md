@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Snakemake workflow: Longread variant pipeline
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg)](https://snakemake.bitbucket.io)
@@ -102,3 +103,7 @@ In case you have also changed or added steps, please consider contributing them 
 
 Test cases are in the subfolder `.test`. They are automatically executed via continuous integration with [Github Actions](https://github.com/features/actions).
 
+=======
+# SF_LR_VAP
+SF Long Read Variant Analysis pipeline
+>>>>>>> 934bb4bf6c7878295ad673658077fcc02e722689
