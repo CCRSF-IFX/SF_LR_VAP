@@ -6,9 +6,14 @@ import pandas as pd
 configfile: "config/config.yaml"
 validate(config, schema="../schemas/config.schema.yaml")
 
-samplepd = pd.read_csv(config["samples"], sep="\t").set_index("sample", drop=False)
-samplepd.index.names = ["sample_id"]
-#validate(samplepd, schema="../schemas/samples.schema.yaml")
+def load_samples(samplesheet):
+    samples = {}
+    with open(samplesheet, 'r') as f:
+        for line in f:
+            sample, path = line.strip().split(',')
+            samples[sample] = {'path': path}
+    return samples
+
+samples = load_samples(config["sample_sheet"])
 
 analysis = config.analysispath
-samples = samplepd["filename"].to_list()
