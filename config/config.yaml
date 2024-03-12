@@ -1,12 +1,28 @@
-# This file should contain everything to configure the workflow on a global scale.
-# In case of sample based data, it should be complemented by a samples.tsv file that contains
-# one row per sample. It can be parsed easily via pandas.
-samples: "config/samples.tsv"
-rawpath: "/path/to/rawdata"
-analysispath: "/path/to/analysisfolder"
-projectname: "John_CS011111_6RNASeq_010124"
-conf: "dna_rna"
-archive: "path/to/archive"
-lib: "T-12U-16B"
-primers: "resource/primers.fa"
-whitelist: "resource/3M-february-2018-REVERSE-COMPLEMENTED.txt.gz"
+sample_sheet: "samplesheet.csv"
+ONT: True
+
+#Genome reference
+genomes:
+  hg38:
+    ref: "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.fa"
+    gtf: "/mnt/ccrsf-ifx/RefGenomes/hg38/GTF/gencode.v44.annotation.gtf"
+    cagepeak: "/mnt/ccrsf-ifx/Software/tools/SQANTI3/hg38.cage_peak_phase1and2combined_coord.bed"
+    polya: "/mnt/ccrsf-ifx/Software/tools/SQANTI3/example/polyA.list"
+  macaca:
+    ref: "/mnt/ccrsf-ifx/RefGenomes/MacacaMulatta_RhesusMonkey_v8/fasta/Macaca_mulatta.Mmul_8.0.1.dna.toplevel.fa"  
+    gtf: "/mnt/ccrsf-ifx/RefGenomes/MacacaMulatta_RhesusMonkey_v8/Macaca_mulatta.Mmul_8.0.1.95.chr.gtf"
+
+#Cluster assign
+large:
+  mem: 400000
+  time: "96:00:00"
+  partition: "norm"
+medium:
+  mem: 128000
+  time: "96:00:00"
+  partition: "norm"
+small:
+  mem: 32000
+  time: "96:00:00"
+  partition: "norm"
+   
