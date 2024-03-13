@@ -1,4 +1,5 @@
 sample_sheet: "samplesheet.csv"
+reference: "hg38"
 ONT: True
 
 #Genome reference
@@ -6,8 +7,10 @@ genomes:
   hg38:
     ref: "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.fa"
     gtf: "/mnt/ccrsf-ifx/RefGenomes/hg38/GTF/gencode.v44.annotation.gtf"
-    cagepeak: "/mnt/ccrsf-ifx/Software/tools/SQANTI3/hg38.cage_peak_phase1and2combined_coord.bed"
-    polya: "/mnt/ccrsf-ifx/Software/tools/SQANTI3/example/polyA.list"
+    ref_filter: "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.filter.fa"
+  mm10:
+    ref: "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.fa"
+    gtf: "/mnt/ccrsf-ifx/RefGenomes/hg38/GTF/gencode.v44.annotation.gtf"  
   macaca:
     ref: "/mnt/ccrsf-ifx/RefGenomes/MacacaMulatta_RhesusMonkey_v8/fasta/Macaca_mulatta.Mmul_8.0.1.dna.toplevel.fa"  
     gtf: "/mnt/ccrsf-ifx/RefGenomes/MacacaMulatta_RhesusMonkey_v8/Macaca_mulatta.Mmul_8.0.1.95.chr.gtf"
