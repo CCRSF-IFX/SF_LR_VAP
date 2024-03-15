@@ -1,0 +1,13 @@
+# ~/.config/snakemake/slurm/config.yaml
+executor: cluster-generic
+jobs: 100
+restart-times: 4
+jobname: "{rulename}.{jobid}"
+cluster-generic-submit-cmd: "sbatch --nodes=1 --ntasks={threads} --mem={resources.mem_mb} --time={resources.time} --partition={resources.partition}"
+max-jobs-per-second: 1
+max-status-checks-per-second: 10
+local-cores: 1
+latency-wait: 300
+show-failed-logs: True
+keep-going: True
+printshellcmds: True
