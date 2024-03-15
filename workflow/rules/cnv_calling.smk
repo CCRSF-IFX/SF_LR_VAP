@@ -18,4 +18,4 @@ rule spectre:
     log: "Sample_{sample}/{sample}_spectre.log"
     conda: "envs/myenv.yaml"
     params: mos_path = "Sample_{sample}/mosdepth/", sname = "{sample}", out_path = "Sample_{sample}/spectre/", ref_filter=config[config['reference']]['ref_filter']    
-    shell: "python spectre CNVCaller --bin-size 1000 --coverage {params.mos_path} --sample-id {params.sname} --output-dir {params.out_path} --reference {ref_filter}"
+    shell: "python script/spectre.py CNVCaller --bin-size 1000 --coverage {params.mos_path} --sample-id {params.sname} --output-dir {params.out_path} --reference {ref_filter}"
