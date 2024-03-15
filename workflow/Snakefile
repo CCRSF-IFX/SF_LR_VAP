@@ -1,18 +1,30 @@
-# The main entry point of your workflow.
-# After configuring, running snakemake -n in a clone of this repository should successfully execute a dry-run of the workflow.
-
-
-report: "report/workflow.rst"
-
-# Allow users to fix the underlying OS via singularity.
-singularity: "docker://continuumio/miniconda3"
-
+#Snakefile for nanopore variant calling pipeline
+#CCR-SF IFX
+#11/21/2023 Jack Chen first version, it is designed to be used after QC pipeline is done.
+#03/15/2023 Jack Chen updated version for snakemake v8
+    	
+include: "rules/common.smk" 
 
 rule all:
-    input:
-        # The first rule should define the default target files
-        # Subsequent target rules can be specified below. They should start with all_*.
+    input: 
+        expand("{sample}.libraries.csv",sample=samples), 
+        expand("Sample_{sample}/{sample}.fastq.gz",sample=samples), 
+        expand("Sample_{sample}/cutesv_plot/variant_count.jpg", sample = samples), 
+        expand("Sample_{sample}/nanoplot_bam/{sample}Non_weightedHistogramReadlength.png", sample = samples), 
+        expand("Sample_{sample}/qualimap/qualimapReport.html", sample = samples), 
+        "VariantQC_clair3.html", "VariantQC_dp.html",
+        expand("Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz", sample=samples), 
+        expand("Sample_{sample}/sniffle_plot/variant_count.jpg", sample=samples), 
+        expand("Sample_{sample}/{sample}_cutesv.vcf", sample=samples), 
+        expand("Sample_{sample}/spectre/{sample}.vcf", sample=samples),
+        expand("Sample_{sample}/{sample}_clair3_filtered.vep.vcf", sample=samples),
+        "multiqc.html"
 
-
-include: "rules/common.smk"
-include: "rules/other.smk"
+include: "rules/bam_qc.smk"
+include: "rules/mapping.smk"
+include: "rules/snv_calling.smk"
+include: "rules/sv_calling.smk"
+include: "rules/cnv_calling.smk"
+include: "rules/variant_qc.smk"
+include: "rules/vep.smk"
+include: "rules/multiqc.smk"
