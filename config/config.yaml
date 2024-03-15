@@ -16,16 +16,8 @@ genomes:
     gtf: "/mnt/ccrsf-ifx/RefGenomes/MacacaMulatta_RhesusMonkey_v8/Macaca_mulatta.Mmul_8.0.1.95.chr.gtf"
 
 #Cluster assign
-large:
-  mem: 400000
-  time: "96:00:00"
-  partition: "norm"
-medium:
-  mem: 128000
-  time: "96:00:00"
-  partition: "norm"
-small:
-  mem: 32000
-  time: "96:00:00"
-  partition: "norm"
-   
+time: "96:00:00"
+partition: "norm"
+mem_lg: 400000
+mem_md: 128000
+mem_sm: 32000

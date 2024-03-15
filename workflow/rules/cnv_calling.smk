@@ -3,7 +3,7 @@
 rule mosdepth:
     input: "Sample_{sample}/{sample}.sorted.bam"
     output: "Sample_{sample}/mosdepth/{sample}.mosdepth.summary.txt"
-    resources: mem_mb=400000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_lg'], time=config['time'], partition=config['partition']
     threads: 36
     log: "Sample_{sample}/{sample}_mosdepth.log"
     conda: "envs/mosdepth.yaml"
@@ -13,7 +13,7 @@ rule mosdepth:
 rule spectre:
     input: rules.mosdepth.output
     output: "Sample_{sample}/spectre/{sample}.vcf"
-    resources: mem_mb=128000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_md'], time=config['time'], partition=config['partition']
     threads: 8
     log: "Sample_{sample}/{sample}_spectre.log"
     conda: "envs/myenv.yaml"

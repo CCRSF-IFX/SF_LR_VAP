@@ -1,169 +1,30 @@
 #Snakefile for nanopore variant calling pipeline
 #CCR-SF IFX
 #11/21/2023 Jack Chen first version, it is designed to be used after QC pipeline is done.
-
-# Env for module load command
-shell.executable("/bin/bash")
-shell.prefix("source /etc/profile.d/modules.sh; ")
-
-import os
-import sys
-import glob
-import pandas as pd
-
-import config
-
-# Software and refernces
-minimap2 = "/mnt/nasapps/production/minimap2/2.24-r1155/bin/minimap2"
-sniffles = "source /home/ccrsfifx/py311/bin/activate; sniffles"
-cutesv = "/mnt/ccrsf-ifx/Software/tools/Anaconda/3.11/envs/cnvkit/bin/cuteSV"
-multiqc = "/mnt/ccrsf-ifx/Software/tools/Anaconda/3.8/bin/multiqc"
-nanoplot = "/mnt/nasapps/development/python/3.9.9/bin/NanoPlot"
-mosdepth = "/mnt/ccrsf-ifx/Software/tools/mosdepth/mosdepth"
-spectre = "python /mnt/ccrsf-ifx/Software/tools/Spectre/spectre.py CNVCaller "
-vep = "module load vep; vep --offline --force_overwrite --everything --hgvs --hgvsg --check_existing --fork 4 --cache --cache_version 98 --dir_cache /mnt/ccrsf-ifx/RefGenomes/Variant_annotation/VEP"
-
-#reference
-ref = "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.fa"
-ref_path = "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC"
-ref_filter = "/mnt/ccrsf-ifx/RefGenomes/hg38_SEQC/hg38.filter.fa"
-vep_species = "homo_sapiens" 
-vep_assembly = "GRCh38"
-vep_fasta = "/mnt/ccrsf-ifx/RefGenomes/Variant_annotation/VEP/homo_sapiens/98_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
-
-# Config file
-rawdata = config.rawdata
-analysis_folder=config.analysis
-conf = config.dna_rna
-project_name = config.project_name
-oneup = os.path.dirname(analysis_folder)
-
-sample_lib = config.sample_name
-sample_info = pd.read_csv(sample_lib,sep=",",header=0)
-samples = []
-dct={}
-for i, row in sample_info.iterrows():
-    if row['Sample'] not in dct:
-        dct[row['Sample']] = set()
-    dct[row['Sample']].add(row['run'])
-    samples.append(row['Sample'])
-	
-rule all:
-    input: expand("{sample}.libraries.csv",sample=samples), expand("Sample_{sample}/{sample}.fastq.gz",sample=samples), expand("Sample_{sample}/cutesv_plot/variant_count.jpg", sample = samples), expand("Sample_{sample}/nanoplot_bam/{sample}Non_weightedHistogramReadlength.png", sample = samples), expand("Sample_{sample}/qualimap/qualimapReport.html", sample = samples), "VariantQC_clair3.html", expand("Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz", sample=samples), expand("Sample_{sample}/{sample}_sniffles_m.vcf", sample=samples), expand("Sample_{sample}/sniffle_plot/variant_count.jpg", sample=samples), expand("Sample_{sample}/{sample}_cutesv.vcf", sample=samples), expand("Sample_{sample}/spectre/{sample}.vcf", sample=samples)#, expand("Sample_{sample}/{sample}_clair3_filtered.vep.vcf", sample=samples)
-	
-rule minimap2:
-    input: "Sample_{sample}/{sample}.fastq.gz"
-    output: temp("Sample_{sample}/{sample}.sam")
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00"
-    shell: "{minimap2} -ax map-ont -t 36 {ref} {input} > {output}"
-
-rule sort:
-    input: rules.minimap2.output
-    output: file1 = temp("Sample_{sample}/{sample}.bam"), file2 = "Sample_{sample}/{sample}.sorted.bam"
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00"
-    shell: "module load samtools; samtools view -S -b {input} > {output.file1}; samtools sort -o {output.file2} -@ 36 {output.file1}; samtools index {output.file2}"
-
-rule qualimap:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/qualimap/qualimapReport.html"
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00", fname = "Sample_{sample}/qualimap"
-    shell: "unset DISPLAY; /mnt/nasapps/development/qualimap/2.3/qualimap bamqc --java-mem-size=128G -bam {input} -c -gd HUMAN -nw 5000 -nt 36 -outdir {params.fname}"
-
-rule nanoplot2:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/nanoplot_bam/{sample}Non_weightedHistogramReadlength.png"
-    params: out = "Sample_{sample}/nanoplot_bam", sample = "{sample}", batch = "--partition=norm --nodes=1 --ntasks=12 --time=100:00:00"
-    shell: "mkdir -p {params.out}; {nanoplot} -t 12 -o {params.out} --prefix {params.sample} --N50 --bam {input} --plots kde"
-
-#rule pepper:
-#    input: "Sample_{sample}/{sample}.sorted.bam"
-#	  output: "Sample_{sample}/Pepper/PEPPER_MARGIN_DEEPVARIANT_FINAL_OUTPUT.vcf.gz"#
-#	  params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00", folder = "Sample_{sample}/Pepper" 
-#	  shell: "module load singularity; singularity run -B {analysis_folder} -B {ref_path} docker://kishwars/pepper_deepvariant:r0.8 run_pepper_margin_deepvariant call_variant -t 36 --ont_r10_q20 -b {analysis_folder}/{input} -f {ref} -o {analysis_folder}/{params.folder}"
-
-rule deepvariant:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-	  output: "Sample_{sample}/{sample}.dp.vcf.gz"
-	  params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00" 
-	  shell: "module load singularity; singularity run -B {analysis_folder} -B {ref_path} docker://google/deepvariant:1.5.0 /opt/deepvariant/bin/run_deepvariant --model_type=ONT_R104 --ref={ref} --reads={analysis_folder}/{input} --output_vcf={analysis_folder}/{output} --num_shards=36"
-	
-rule bcftools:
-	input: rules.deepvariant.output
-	output: "Sample_{sample}/{sample}_dp_filtered.vcf.gz"
-	params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=4:00:00"
-	shell: "module load bcftools;  bcftools view -f 'PASS' {input} | bcftools sort -O z -o {output}; bcftools index -t {output}"
-	
-rule clair3:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-	  output: "Sample_{sample}/clair3/merge_output.vcf.gz"
-	  params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00", folder = "Sample_{sample}" 
-	  shell: "module load singularity; singularity run -B {analysis_folder}:/data -B {ref_path}:/ref -B /mnt/ccrsf-ifx/RefGenomes/clair3/rerio/clair3_models:/model docker://hkubal/clair3:latest /opt/bin/run_clair3.sh --thread 36 --bam_fn /data/{input} --ref_fn /ref/hg38.fa --output /data/{params.folder}/clair3 --platform ont --model_path /model/r1041_e82_400bps_hac_g632"
-	
-rule bcftools2:
-	input: rules.clair3.output
-	output: "Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz"
-	params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=4:00:00"
-	shell: "module load bcftools;  bcftools view -f 'PASS' {input} | bcftools sort -O z -o {output}; bcftools index -t {output}"
-
-def get_vtext(wildcards):
-    v_text = ""
-    v_text1 = ""
-    for sample in list(set(samples)):
-        v_text += f" -V:{sample} {analysis_folder}/Sample_{sample}/{sample}_dp_filtered.vcf.gz"
-        v_text1 += f" -V:{sample} {analysis_folder}/Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz"
-    return [v_text, v_text1]
-
-rule variantqc:
-	  input: dp = expand("Sample_{sample}/{sample}_dp_filtered.vcf.gz", sample=samples), clair3 = expand("Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz", sample=samples)
-	  output: "VariantQC_dp.html", "VariantQC_clair3.html"
-	  params: batch = "--partition=norm --nodes=1 --ntasks=12 --time=10:00:00", vtexts=get_vtext
-	  shell: "module load singularity; singularity run -B {analysis_folder} -B {ref_path} docker://ghcr.io/bimberlab/discvrseq VariantQC -R {ref} {params.vtexts[0]} -O {analysis_folder}/VariantQC_dp.html; singularity run -B {analysis_folder} -B {ref_path} docker://ghcr.io/bimberlab/discvrseq VariantQC -R {ref} {params.vtexts[1]} -O {analysis_folder}/VariantQC_clair3.html"
-
-rule sniffles:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/{sample}_sniffles.vcf"
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00"
-    shell: "{sniffles} -i {input} --reference {ref} -v {output}" 
-
-rule sniffles_m:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/{sample}_sniffles_m.vcf"
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00"
-    shell: "{sniffles} -i {input} --reference {ref} -v {output} --mosaic"
-
-rule cutesv:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/{sample}_cutesv.vcf"
-    params: batch = "--partition=norm --nodes=1 --ntasks=36 --time=100:00:00"
-    shell: "{cutesv} -t 36 --genotype --max_cluster_bias_INS 100 --diff_ratio_merging_INS 0.3 --max_cluster_bias_DEL 100 --diff_ratio_merging_DEL 0.3 {input} {ref} {output} /tmp"
-
-rule bcf2:
-	  input: sniffle_in="Sample_{sample}/{sample}_sniffles.vcf", cutesv_in="Sample_{sample}/{sample}_cutesv.vcf"
-	  output: sniffle_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz", cutesv_out="Sample_{sample}/{sample}_cutesv_filtered.vcf.gz"
-	  params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=4:00:00"
-	  shell: "module load bcftools; bcftools view -f 'PASS' {input.sniffle_in} | bcftools sort -O z -o {output.sniffle_out}; bcftools index -t {output.sniffle_out}; bcftools view -f 'PASS' {input.cutesv_in} | bcftools sort -O z -o {output.cutesv_out}; bcftools index -t {output.cutesv_out}"
-	
-rule svplot:
-	  input: sniffle_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz", cutesv_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz"
-	  output: sniffle_plot="Sample_{sample}/sniffle_plot/variant_count.jpg", cutsv_plot="Sample_{sample}/cutesv_plot/variant_count.jpg"
-	  params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=4:00:00", sniffle_folder = "Sample_{sample}/sniffle_plot", cutesv_folder = "Sample_{sample}/cutesv_plot"
-	  shell: "source /home/ccrsfifx/py311/bin/activate; mkdir -p {params.sniffle_folder}; python /mnt/ccrsf-ifx/Software/tools/sniffles/sniffle2_plot/sniffles2_plots.py -i {input.sniffle_out} -o {params.sniffle_folder}; mkdir -p {params.cutesv_folder}; python /mnt/ccrsf-ifx/Software/tools/sniffles/sniffle2_plot/sniffles2_plots.py -i {input.cutesv_out} -o {params.cutesv_folder}"
- 
-rule mosdepth:
-    input: "Sample_{sample}/{sample}.sorted.bam"
-    output: "Sample_{sample}/mosdepth/{sample}.mosdepth.summary.txt"
-    params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=100:00:00", sname = "{sample}", path = "Sample_{sample}/mosdepth"
-    shell: "mkdir -p {params.path}; cd {params.path}; {mosdepth} -n --fast-mode --by 1000 {params.sname} ../{params.sname}.sorted.bam"
-    
-rule spectre:
-    input: rules.mosdepth.output
-    output: "Sample_{sample}/spectre/{sample}.vcf"
-    params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=100:00:00", mos_path = "Sample_{sample}/mosdepth/", sname = "{sample}", out_path = "Sample_{sample}/spectre/"     
-    shell: "source ~/py311/bin/activate; {spectre} --bin-size 1000 --coverage {params.mos_path} --sample-id {params.sname} --output-dir {params.out_path} --reference {ref_filter}"
-    
-rule vep:
-    input: clair3 = "Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz", sniffles = "Sample_{sample}/{sample}_sniffles_filtered.vcf.gz", spectre = "Sample_{sample}/spectre/{sample}.vcf"
-    output: c3 = "Sample_{sample}/{sample}_clair3_filtered.vep.vcf", snf = "Sample_{sample}/{sample}_sniffles_filtered.vep.vcf", spt = "Sample_{sample}/{sample}_spectre_filtered.vep.vcf"
-    params: batch = "--partition=norm --nodes=1 --ntasks=4 --time=100:00:00"
-    shell: "{vep} --species {vep_species} --assembly {vep_assembly} --fasta {vep_fasta} --vcf -i {input.clair3} -o {output.c3}; {vep} --species {vep_species} --assembly {vep_assembly} --fasta {vep_fasta} --vcf -i {input.sniffles} -o {output.snf}; {vep} --species {vep_species} --assembly {vep_assembly} --fasta {vep_fasta} --vcf -i {input.spectre} -o {output.spt}"
+#03/15/2023 Jack Chen updated version for snakemake v8
     	
+include: "rules/common.smk" 
+
+rule all:
+    input: 
+        expand("{sample}.libraries.csv",sample=samples), 
+        expand("Sample_{sample}/{sample}.fastq.gz",sample=samples), 
+        expand("Sample_{sample}/cutesv_plot/variant_count.jpg", sample = samples), 
+        expand("Sample_{sample}/nanoplot_bam/{sample}Non_weightedHistogramReadlength.png", sample = samples), 
+        expand("Sample_{sample}/qualimap/qualimapReport.html", sample = samples), 
+        "VariantQC_clair3.html", "VariantQC_dp.html",
+        expand("Sample_{sample}/clair3/{sample}_clair3_filtered.vcf.gz", sample=samples), 
+        expand("Sample_{sample}/sniffle_plot/variant_count.jpg", sample=samples), 
+        expand("Sample_{sample}/{sample}_cutesv.vcf", sample=samples), 
+        expand("Sample_{sample}/spectre/{sample}.vcf", sample=samples),
+        expand("Sample_{sample}/{sample}_clair3_filtered.vep.vcf", sample=samples),
+        "multiqc.html"
+
+include: "rules/bam_qc.smk"
+include: "rules/mapping.smk"
+include: "rules/snv_calling.smk"
+include: "rules/sv_calling.smk"
+include: "rules/cnv_calling.smk"
+include: "rules/variant_qc.smk"
+include: "rules/vep.smk"
+include: "rules/multiqc.smk"

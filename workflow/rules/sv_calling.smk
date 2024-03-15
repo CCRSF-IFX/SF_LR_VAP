@@ -3,7 +3,7 @@
 rule sniffles:
     input: "Sample_{sample}/{sample}.sorted.bam"
     output: "Sample_{sample}/{sample}_sniffles.vcf"
-    resources: mem_mb=400000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_lg'], time=config['time'], partition=config['partition']
     threads: 36
     log: "Sample_{sample}/{sample}_sniffles.log"
     conda: "envs/sniffles.yaml"
@@ -13,7 +13,7 @@ rule sniffles:
 rule sniffles_filter:
 	input: sniffles_in="Sample_{sample}/{sample}_sniffles.vcf"
 	output: sniffles_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz"
-    resources: mem_mb=128000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_md'], time=config['time'], partition=config['partition']
     threads: 8
     log: "Sample_{sample}/{sample}_sniffles_filter.log"
     conda: "envs/bcftools.yaml"
@@ -22,7 +22,7 @@ rule sniffles_filter:
 rule sniffles_plot:
 	input: sniffles_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz"
 	output: sniffles_plot="Sample_{sample}/sniffles_plot/variant_count.jpg"
-    resources: mem_mb=128000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_sm'], time=config['time'], partition=config['partition']
     threads: 8
     log: "Sample_{sample}/{sample}_sniffles_plot.log"
     conda: "envs/myenv.yaml"
@@ -32,7 +32,7 @@ rule sniffles_plot:
 rule cutesv:
     input: "Sample_{sample}/{sample}.sorted.bam"
     output: "Sample_{sample}/{sample}_cutesv.vcf"
-    resources: mem_mb=400000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_lg'], time=config['time'], partition=config['partition']
     threads: 36
     log: "Sample_{sample}/{sample}_cutesv.log"
     conda: "envs/cutesv.yaml"
@@ -42,7 +42,7 @@ rule cutesv:
 rule cutesv_filter:
 	input: cutesv_in="Sample_{sample}/{sample}_cutesv.vcf"
 	output: cutesv_out="Sample_{sample}/{sample}_cutesv_filtered.vcf.gz"
-    resources: mem_mb=128000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_md'], time=config['time'], partition=config['partition']
     threads: 8
     log: "Sample_{sample}/{sample}_cutesv_filter.log"
     conda: "envs/bcftools.yaml"
@@ -51,7 +51,7 @@ rule cutesv_filter:
 rule cutesv_plot:
 	input: cutesv_out="Sample_{sample}/{sample}_sniffles_filtered.vcf.gz"
 	output: cutsv_plot="Sample_{sample}/cutesv_plot/variant_count.jpg"
-    resources: mem_mb=128000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_sm'], time=config['time'], partition=config['partition']
     threads: 8
     log: "Sample_{sample}/{sample}_cutesv_filter.log"
     conda: "envs/bcftools.yaml"

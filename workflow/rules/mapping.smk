@@ -6,8 +6,8 @@ def get_fastq_path(wildcards):
 rule minimap2:
     input: get_fastq_path
     output: temp("Sample_{sample}/{sample}.sam")
-    resources: mem_mb=400000, time="96:00:00", partition="norm"
-    threads: 16
+    resources: mem_mb=config['mem_lg'], time=config['time'], partition=config['partition']
+    threads: 36
     log: "Sample_{sample}/{sample}_map.log"
     params:
       ref=config[config['reference']]['ref']
@@ -18,7 +18,7 @@ rule minimap2:
 rule sort:
     input: "Sample_{sample}/{sample}.sam"
     output: file1 = temp("Sample_{sample}/{sample}.bam"), file2 = "Sample_{sample}/{sample}.sorted.bam"
-    resources: mem_mb=400000, time="96:00:00", partition="norm"
+    resources: mem_mb=config['mem_lg'], time=config['time'], partition=config['partition']
     threads: 36
     log: "Sample_{sample}/{sample}_sort.log"
     conda: "envs/samtools.yaml
