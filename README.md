@@ -16,12 +16,32 @@ In summary, SF_LR_VAP offers a comprehensive and integrative approach to the ana
 
 
 ## Features
-- **Comprehensive Analysis**: Processes long-read sequencing data from raw reads to annotated variants.
-- **Support for Long-Read Technologies**: Optimized for data from platforms like PacBio and Oxford Nanopore.
-- **Quality Control**: Includes steps for quality assessment of sequencing reads and variant calls.
-- **Variant Calling**: Identifies single nucleotide variants (SNVs) and structural variants (SVs) using state-of-the-art tools.
-- **Annotation**: Annotates variants for functional impact using VEP.
-- **Visualization**: Generates various plots and reports for easy interpretation of results.
+
+### Comprehensive Workflow for Long-Read Sequencing Data
+SF_LR_VAP is meticulously designed to support and analyze long-read sequencing data from leading technologies like PacBio and Oxford Nanopore. The pipeline manages everything from raw data processing and quality control to the final variant calling and annotation, making it a one-stop solution for genomic researchers and clinicians.
+
+### Advanced Quality Control (QC) Measures
+- **Read Quality Assessment**: Utilizes tools like NanoPlot to evaluate the quality of sequencing reads, ensuring that only high-quality data is used for further analysis.
+- **Alignment Quality Control**: Employs Qualimap to assess the quality of alignments, providing insights into the coverage, mapping quality, and potential biases in the data.
+
+### High-Performance Mapping and Variant Calling
+- **Efficient Read Mapping**: Uses minimap2 for fast and accurate alignment of long reads to reference genomes, optimizing the detection of genomic variants.
+- **Single Nucleotide Variants (SNVs) and Structural Variants (SVs) Detection**: Integrates DeepVariant for precise SNV calling and Sniffles for reliable detection of structural variants, ensuring comprehensive variant discovery.
+
+### Variant Filtering and Annotation
+- **Robust Variant Filtering**: Implements filtering strategies to refine variant calls based on quality metrics, enhancing the reliability of variant identification.
+- **Functional Impact Analysis**: Utilizes the Variant Effect Predictor (VEP) for annotating variants with their potential functional impacts, aiding in the interpretation of their biological significance.
+
+### Visualization and Comprehensive Reporting
+- **Variant Visualization**: Generates plots for variant counts and read length distributions, offering intuitive visual insights into the sequencing data and variant landscape.
+- **MultiQC Integration**: Compiles reports from various stages of the analysis into a unified MultiQC report, providing a high-level overview and facilitating the identification of key findings.
+
+### Configurable and User-Friendly
+- **Flexible Configuration**: Allows users to easily customize analysis parameters through a central configuration file, adapting the pipeline to different datasets and research needs.
+- **Detailed Documentation**: Accompanied by comprehensive documentation, guiding users through installation, configuration, and execution, ensuring a smooth user experience.
+
+SF_LR_VAP combines these features to offer a robust and user-friendly pipeline for the analysis of long-read sequencing data, addressing the challenges of variant calling with advanced bioinformatics tools and techniques. It's built to cater to the needs of genomic researchers and clinicians looking for reliable and comprehensive variant analysis solutions.
+
 
 ## Installation
 Before installing, ensure you have Conda and Snakemake installed.
