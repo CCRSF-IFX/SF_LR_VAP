@@ -50,3 +50,7 @@ Clone the repository:
 ```bash
 git clone https://github.com/CCRSF-IFX/SF_LR_VAP.git
 cd SF_LR_VAP
+```
+
+## Contact
+CCRSF_IFX@nih.gov
